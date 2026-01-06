@@ -1,0 +1,28 @@
+{
+  "name": "countdown-video",
+  "version": "1.0.0",
+  "description": "999 days countdown automation for Instagram Reels",
+  "main": "src/index.jsx",
+  "type": "module",
+  "scripts": {
+    "start": "remotion preview src/index.jsx",
+    "render:video": "remotion render src/index.jsx Countdown out/video.mp4 --codec=h264 --overwrite",
+    "render:cover": "remotion still src/index.jsx Countdown out/cover.png --frame=54",
+    "render": "npm run render:video && npm run render:cover",
+    "publish": "node src/publish-instagram.js",
+    "daily": "npm run render && npm run publish"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "ftp": "^0.3.10",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@types/react": "^18.0.0",
+    "prettier": "^3.7.4"
+  }
+}
