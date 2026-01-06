@@ -10,6 +10,7 @@ generated/
 # Other
 out/**
 public/**
+cron.bat
 
 # TypeScript build info
 *.tsbuildinfo

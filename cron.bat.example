@@ -1,0 +1,3 @@
+@echo off
+cd /d "C:\ruta\absoluta\al\proyecto"
+npm run daily >> cron.log 2>&1
