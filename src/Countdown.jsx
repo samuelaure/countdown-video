@@ -16,7 +16,7 @@ export const CountdownComposition = () => {
   const { current, prev } = useMemo(() => {
     const today = Math.max(
       0,
-      999 - Math.floor((new Date() - new Date("2026-01-01")) / 864e5)
+      999 - Math.floor((new Date() - new Date("2026-01-01")) / 864e5),
     );
     return { current: today, prev: today + 1 };
   }, []);
@@ -36,7 +36,6 @@ export const CountdownComposition = () => {
 
   const volume = 0.36;
 
-
   return (
     <AbsoluteFill
       style={{
@@ -49,10 +48,7 @@ export const CountdownComposition = () => {
     >
       {/* AUDIO - Use this command to match the sound effect and animation timing:
       ffmpeg -f lavfi -i "anullsrc=r=44100:cl=stereo:d=1.5" -i flip_sound.mp3 -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" -acodec libmp3lame flip_sound_delayed.mp3*/}
-      <Audio
-        src={staticFile("flip_sound_delayed.mp3")}
-        volume={volume}
-      />
+      <Audio src={staticFile("flip_sound_delayed.mp3")} volume={volume} />
 
       <div
         style={{
