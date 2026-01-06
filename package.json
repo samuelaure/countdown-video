@@ -7,7 +7,7 @@
   "scripts": {
     "start": "remotion preview src/index.jsx",
     "render:video": "remotion render src/index.jsx Countdown out/video.mp4 --codec=h264 --overwrite",
-    "render:cover": "remotion still src/index.jsx Countdown out/cover.png --frame=54",
+    "render:cover": "remotion still src/index.jsx Countdown out/cover.png --frame=1",
     "render": "npm run render:video && npm run render:cover",
     "publish": "node src/publish-instagram.js",
     "daily": "npm run render && npm run publish"
