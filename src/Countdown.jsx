@@ -16,18 +16,26 @@ export const CountdownComposition = () => {
   const { current, prev } = useMemo(() => {
     const today = Math.max(
       0,
-      999 - Math.floor((new Date() - new Date("2026-01-01")) / 864e5),
+      999 - Math.floor((new Date() - new Date("2026-01-01")) / 864e5)
     );
     return { current: today, prev: today + 1 };
   }, []);
 
   const start = Math.floor(1.5 * fps);
+
   const anim = spring({
     frame: frame - start,
     fps,
-    config: { stiffness: 100, damping: 12 },
+    config: {
+      stiffness: 100,
+      damping: 12,
+    },
   });
-  const getDigits = (num) => String(num).padStart(3, "0").split("");
+
+  const digits = (n) => String(n).padStart(3, "0").split("");
+
+  const volume = 0.36;
+
 
   return (
     <AbsoluteFill
@@ -39,10 +47,12 @@ export const CountdownComposition = () => {
         justifyContent: "center",
       }}
     >
-      {/* AUDIO */}
-      {frame >= start && (
-        <Audio src={staticFile("flip_sound.mp3")} volume={0.6} />
-      )}
+      {/* AUDIO - Use this command to match the sound effect and animation timing:
+      ffmpeg -f lavfi -i "anullsrc=r=44100:cl=stereo:d=1.5" -i flip_sound.mp3 -filter_complex "[0:a][1:a]concat=n=2:v=0:a=1" -acodec libmp3lame flip_sound_delayed.mp3*/}
+      <Audio
+        src={staticFile("flip_sound_delayed.mp3")}
+        volume={volume}
+      />
 
       <div
         style={{
@@ -52,10 +62,10 @@ export const CountdownComposition = () => {
           transform: "scale(1.15)",
         }}
       >
-        {getDigits(current).map((d, i) => (
+        {digits(current).map((d, i) => (
           <FlipUnit
             key={i}
-            currentDigit={getDigits(prev)[i]}
+            currentDigit={digits(prev)[i]}
             nextDigit={d}
             progress={anim}
           />
@@ -130,7 +140,7 @@ const FlipUnit = ({ currentDigit, nextDigit, progress }) => {
         perspective: 1200,
       }}
     >
-      {/* Fondo estático */}
+      {/* Static background */}
       <Box
         bg="#1a1a1a"
         radius="24px 24px 0 0"
@@ -143,7 +153,7 @@ const FlipUnit = ({ currentDigit, nextDigit, progress }) => {
         {currentDigit}
       </Box>
 
-      {/* Paleta móvil */}
+      {/* Flip animation */}
       {changed && (
         <div
           style={{
@@ -162,7 +172,7 @@ const FlipUnit = ({ currentDigit, nextDigit, progress }) => {
         </div>
       )}
 
-      {/* Detalles mecánicos */}
+      {/* Mechanic Details*/}
       <div
         style={{
           position: "absolute",
