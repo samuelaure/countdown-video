@@ -9,7 +9,6 @@ generated/
 
 # Other
 out/**
-public/**
 .agent/
 .cursorrules
 
