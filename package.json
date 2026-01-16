@@ -1,6 +1,6 @@
 {
   "name": "countdown-video",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "999 days countdown automation for Instagram Reels",
   "main": "src/index.jsx",
   "type": "module",

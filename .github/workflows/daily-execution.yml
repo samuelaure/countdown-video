@@ -1,0 +1,40 @@
+name: Daily Execution
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # 9:00 CET (UTC+1)
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  daily-task:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Remotion dependencies
+        run: npx remotion browser install
+
+      - name: Ensure out directory exists
+        run: mkdir -p out
+
+      - name: Run daily script
+        run: npm run daily
+        env:
+          IG_TOKEN: ${{ secrets.IG_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          PUBLIC_VIDEO_BASE_URL: ${{ secrets.PUBLIC_VIDEO_BASE_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
