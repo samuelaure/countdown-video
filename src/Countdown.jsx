@@ -7,6 +7,12 @@ import {
   Audio,
 } from "remotion";
 import { useMemo } from "react";
+import { loadFont } from "@remotion/google-fonts/GoogleSans";
+
+const { fontFamily } = loadFont("normal", {
+  fontWeight: "900",
+  subsets: ["latin"],
+});
 
 export const CountdownComposition = () => {
   const frame = useCurrentFrame();
@@ -74,7 +80,7 @@ export const CountdownComposition = () => {
         <h2
           style={{
             fontSize: "110px",
-            fontFamily: "sans-serif",
+            fontFamily,
             fontWeight: "900",
             letterSpacing: "0.45em",
             color: "#a1a1aa",
@@ -119,7 +125,7 @@ const FlipUnit = ({ currentDigit, nextDigit, progress }) => {
         style={{
           fontSize: "14rem",
           fontWeight: 900,
-          fontFamily: "system-ui, sans-serif",
+          fontFamily,
           color: bg === "#1a1a1a" ? "#f0f0f0" : "#fff",
           transform: `translateY(${origin === "bottom" ? "50%" : "-50%"})`,
         }}
