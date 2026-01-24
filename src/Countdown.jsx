@@ -7,10 +7,10 @@ import {
   Audio,
 } from "remotion";
 import { useMemo } from "react";
-import { loadFont } from "@remotion/google-fonts/GoogleSans";
+import { loadFont } from "@remotion/google-fonts/Inter";
 
 const { fontFamily } = loadFont("normal", {
-  fontWeight: "900",
+  weights: ["900"],
   subsets: ["latin"],
 });
 
