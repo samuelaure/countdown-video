@@ -3,6 +3,7 @@ import fs from "fs";
 import dotenv from "dotenv";
 import FTP from "ftp";
 import { notifyTelegram } from "./telegram.js";
+import logger from "./logger.js";
 
 dotenv.config();
 
@@ -37,59 +38,84 @@ function uploadViaFTP(localPath, remoteName) {
       });
     });
 
-    client.on("error", reject);
-
-    client.connect({
-      host: FTP_HOST,
-      user: FTP_USER,
-      password: FTP_PASSWORD,
+    client.on("error", (err) => {
+      reject(new Error(`FTP Error: ${err.message}`));
     });
+
+    try {
+      client.connect({
+        host: FTP_HOST,
+        user: FTP_USER,
+        password: FTP_PASSWORD,
+      });
+    } catch (err) {
+      reject(new Error(`FTP Connection Error: ${err.message}`));
+    }
   });
 }
 
 async function waitForContainer(containerId) {
+  let attempts = 0;
   while (true) {
+    attempts++;
+    if (attempts > 20) throw new Error("Timeout waiting for media container"); // Prevent infinite loop
+
     await new Promise((r) => setTimeout(r, 5000));
 
-    const res = await axios.get(
-      `https://graph.facebook.com/v24.0/${containerId}`,
-      {
-        params: {
-          fields: "status_code",
-          access_token: IG_TOKEN,
+    try {
+      const res = await axios.get(
+        `https://graph.facebook.com/v24.0/${containerId}`,
+        {
+          params: {
+            fields: "status_code,status",
+            access_token: IG_TOKEN,
+          },
         },
-      },
-    );
+      );
 
-    if (res.data.status_code === "FINISHED") return;
-    if (res.data.status_code === "ERROR") {
-      throw new Error("Instagram processing error");
+      logger.info(`Container status check #${attempts}`, {
+        status_code: res.data.status_code,
+        status: res.data.status,
+      });
+
+      if (res.data.status_code === "FINISHED") return;
+      if (res.data.status_code === "ERROR") {
+        throw new Error(
+          `Instagram processing error: ${JSON.stringify(res.data)}`,
+        );
+      }
+    } catch (error) {
+      // If it's the specific processing error, rethrow. Otherwise log and retry (e.g. network blip)
+      if (error.message.includes("Instagram processing error")) throw error;
+      logger.error("Error checking container status", error);
     }
   }
 }
 
 async function publishReel() {
   try {
+    logger.info("Starting publish process", { date });
+
     if (!fs.existsSync(LOCAL_VIDEO_PATH)) {
-      throw new Error("Video not found");
+      throw new Error(`Video not found at ${LOCAL_VIDEO_PATH}`);
     }
     if (!fs.existsSync(LOCAL_COVER_PATH)) {
-      throw new Error("Cover not found");
+      throw new Error(`Cover not found at ${LOCAL_COVER_PATH}`);
     }
 
-    console.log("⬆️ Uploading VIDEO by FTP...");
+    logger.info("⬆️ Uploading VIDEO by FTP...");
     await notifyTelegram(
       "2️⃣⏳ @in999days Successful rendering... Start uploading video and cover to Instagram.",
     );
 
     const videoUrl = await uploadViaFTP(LOCAL_VIDEO_PATH, `video_${date}.mp4`);
-    console.log("🌐 Video URL:", videoUrl);
+    logger.info("🌐 Video URL uploaded", { videoUrl });
 
-    console.log("⬆️ Uploading COVER by FTP...");
+    logger.info("⬆️ Uploading COVER by FTP...");
     const coverUrl = await uploadViaFTP(LOCAL_COVER_PATH, `cover_${date}.png`);
-    console.log("🌐 Cover URL:", coverUrl);
+    logger.info("🌐 Cover URL uploaded", { coverUrl });
 
-    console.log("📦 Creating Reel container...");
+    logger.info("📦 Creating Reel container...");
 
     const containerRes = await axios.post(
       `https://graph.facebook.com/v24.0/${IG_USER_ID}/media`,
@@ -103,11 +129,11 @@ async function publishReel() {
     );
 
     const containerId = containerRes.data.id;
-    console.log("⏳ Processing Reel:", containerId);
+    logger.info("⏳ Processing Reel", { containerId });
 
     await waitForContainer(containerId);
 
-    console.log("🚀 Publishing Reel...");
+    logger.info("🚀 Publishing Reel...");
     const publishRes = await axios.post(
       `https://graph.facebook.com/v24.0/${IG_USER_ID}/media_publish`,
       {
@@ -116,7 +142,7 @@ async function publishReel() {
       },
     );
 
-    console.log("✅ Reel published correctly!");
+    logger.info("✅ Reel published correctly!", { id: publishRes.data.id });
 
     const mediaId = publishRes.data.id;
 
@@ -130,15 +156,21 @@ async function publishReel() {
       },
     );
 
-    console.log("Notificando a Telegram...");
+    logger.info("Fetching permalink...", {
+      permalink: permalinkRes.data.permalink,
+    });
     await notifyTelegram(
-      `3️⃣✅ <b>Reel publicado</b>\n<a href="${permalinkRes.data.permalink}">Ver en Instagram</a>`,
+      `3️⃣✅ <b>Reel published</b>\n<a href="${permalinkRes.data.permalink}">View on Instagram</a>`,
     );
-    console.log("Notificación enviada.");
+    logger.info("Notification sent.");
   } catch (err) {
+    logger.error("Fatal error in publishReel", err);
     await notifyTelegram(`❌ <b>Error</b>\n${err.message}`);
     throw err;
   }
 }
 
-publishReel().catch(() => process.exit(1));
+publishReel().catch((err) => {
+  logger.error("Unhandled promise rejection", err);
+  process.exit(1);
+});
