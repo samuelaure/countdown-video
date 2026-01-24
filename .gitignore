@@ -54,3 +54,6 @@ coverage/
 
 # Temporary files
 *.tmp
+
+# Commit message temp file
+commit_msg.txt

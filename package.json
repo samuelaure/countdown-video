@@ -1,6 +1,7 @@
 {
   "name": "countdown-video",
-  "version": "1.0.5",
+  "version": "1.0.6",
+  "author": "Samuel Aure",
   "description": "999 days countdown automation for Instagram Reels",
   "main": "src/index.jsx",
   "type": "module",
@@ -14,16 +15,16 @@
     "format": "prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
   "dependencies": {
-    "@remotion/google-fonts": "^4.0.406",
+    "@remotion/google-fonts": "4.0.406",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "ftp": "^0.3.10",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "remotion": "^4.0.0"
+    "remotion": "4.0.406"
   },
   "devDependencies": {
-    "@remotion/cli": "^4.0.0",
+    "@remotion/cli": "4.0.406",
     "@types/react": "^18.0.0",
     "prettier": "^3.7.4"
   }
