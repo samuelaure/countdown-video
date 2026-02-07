@@ -47,6 +47,7 @@ function uploadViaFTP(localPath, remoteName) {
         host: FTP_HOST,
         user: FTP_USER,
         password: FTP_PASSWORD,
+        pasv: true,
       });
     } catch (err) {
       reject(new Error(`FTP Connection Error: ${err.message}`));
