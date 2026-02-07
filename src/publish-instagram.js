@@ -115,6 +115,9 @@ async function publishReel() {
     const coverUrl = await uploadViaFTP(LOCAL_COVER_PATH, `cover_${date}.png`);
     logger.info("🌐 Cover URL uploaded", { coverUrl });
 
+    logger.info("⏳ Waiting 15 seconds for file synchronization...");
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+
     logger.info("📦 Creating Reel container...");
 
     const containerRes = await axios.post(
