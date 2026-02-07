@@ -108,15 +108,22 @@ async function publishReel() {
       "2️⃣⏳ @in999days Successful rendering... Start uploading video and cover to Instagram.",
     );
 
-    const videoUrl = await uploadViaFTP(LOCAL_VIDEO_PATH, `video_${date}.mp4`);
+    const timestamp = Date.now();
+    const videoUrl = await uploadViaFTP(
+      LOCAL_VIDEO_PATH,
+      `video_${date}_${timestamp}.mp4`,
+    );
     logger.info("🌐 Video URL uploaded", { videoUrl });
 
     logger.info("⬆️ Uploading COVER by FTP...");
-    const coverUrl = await uploadViaFTP(LOCAL_COVER_PATH, `cover_${date}.png`);
+    const coverUrl = await uploadViaFTP(
+      LOCAL_COVER_PATH,
+      `cover_${date}_${timestamp}.png`,
+    );
     logger.info("🌐 Cover URL uploaded", { coverUrl });
 
-    logger.info("⏳ Waiting 15 seconds for file synchronization...");
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+    logger.info("⏳ Waiting 30 seconds for file synchronization...");
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     logger.info("📦 Creating Reel container...");
 
