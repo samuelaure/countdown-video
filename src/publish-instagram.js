@@ -1,20 +1,13 @@
 import axios from "axios";
 import fs from "fs";
 import dotenv from "dotenv";
-import FTP from "ftp";
 import { notifyTelegram } from "./telegram.js";
 import logger from "./logger.js";
+import { uploadFileToR2 } from "./s3-client.js";
 
 dotenv.config();
 
-const {
-  IG_TOKEN,
-  IG_USER_ID,
-  FTP_HOST,
-  FTP_USER,
-  FTP_PASSWORD,
-  PUBLIC_VIDEO_BASE_URL,
-} = process.env;
+const { IG_TOKEN, IG_USER_ID, R2_PUBLIC_URL } = process.env;
 
 const date = new Date().toISOString().slice(0, 10);
 
@@ -26,33 +19,10 @@ const CAPTION = `${Math.max(
   999 - Math.floor((new Date() - new Date("2026-01-01")) / 864e5),
 )}...`;
 
-function uploadViaFTP(localPath, remoteName) {
-  return new Promise((resolve, reject) => {
-    const client = new FTP();
-
-    client.on("ready", () => {
-      client.put(localPath, remoteName, (err) => {
-        client.end();
-        if (err) return reject(err);
-        resolve(`${PUBLIC_VIDEO_BASE_URL}/${remoteName}`);
-      });
-    });
-
-    client.on("error", (err) => {
-      reject(new Error(`FTP Error: ${err.message}`));
-    });
-
-    try {
-      client.connect({
-        host: FTP_HOST,
-        user: FTP_USER,
-        password: FTP_PASSWORD,
-        pasv: true,
-      });
-    } catch (err) {
-      reject(new Error(`FTP Connection Error: ${err.message}`));
-    }
-  });
+async function uploadMedia(localPath, filename, contentType) {
+  const key = `ig_in999days/${filename}`; // Maintain folder structure
+  await uploadFileToR2(localPath, key, contentType);
+  return `${R2_PUBLIC_URL}/${key}`;
 }
 
 async function waitForContainer(containerId) {
@@ -104,22 +74,24 @@ async function publishReel() {
       throw new Error(`Cover not found at ${LOCAL_COVER_PATH}`);
     }
 
-    logger.info("⬆️ Uploading VIDEO by FTP...");
+    logger.info("⬆️ Uploading VIDEO to R2...");
     await notifyTelegram(
       "2️⃣⏳ @in999days Successful rendering... Start uploading video and cover to Instagram.",
     );
 
     const timestamp = Date.now();
-    const videoUrl = await uploadViaFTP(
+    const videoUrl = await uploadMedia(
       LOCAL_VIDEO_PATH,
       `video_${date}_${timestamp}.mp4`,
+      "video/mp4",
     );
     logger.info("🌐 Video URL uploaded", { videoUrl });
 
-    logger.info("⬆️ Uploading COVER by FTP...");
-    const coverUrl = await uploadViaFTP(
+    logger.info("⬆️ Uploading COVER to R2...");
+    const coverUrl = await uploadMedia(
       LOCAL_COVER_PATH,
       `cover_${date}_${timestamp}.png`,
+      "image/png",
     );
     logger.info("🌐 Cover URL uploaded", { coverUrl });
 
