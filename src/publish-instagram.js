@@ -27,11 +27,16 @@ async function uploadMedia(localPath, filename, contentType) {
 
 async function waitForContainer(containerId) {
   let attempts = 0;
+  let delay = 5000;
+  const maxDelay = 60000;
+
   while (true) {
     attempts++;
-    if (attempts > 20) throw new Error("Timeout waiting for media container"); // Prevent infinite loop
+    // if (attempts > 20) throw new Error("Timeout waiting for media container"); // Prevent infinite loop
 
-    await new Promise((r) => setTimeout(r, 5000));
+    // await new Promise((r) => setTimeout(r, 5000));
+    logger.info(`Waiting ${delay / 1000} seconds before next check...`);
+    await new Promise((r) => setTimeout(r, delay));
 
     try {
       const res = await axios.get(
@@ -55,10 +60,15 @@ async function waitForContainer(containerId) {
           `Instagram processing error: ${JSON.stringify(res.data)}`,
         );
       }
+
+      // Increase delay for next attempt (capped at maxDelay)
+      delay = Math.min(delay + 5000, maxDelay);
     } catch (error) {
       // If it's the specific processing error, rethrow. Otherwise log and retry (e.g. network blip)
       if (error.message.includes("Instagram processing error")) throw error;
       logger.error("Error checking container status", error);
+      // Also increase delay on error
+      delay = Math.min(delay + 5000, maxDelay);
     }
   }
 }
