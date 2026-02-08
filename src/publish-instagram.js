@@ -9,6 +9,12 @@ dotenv.config();
 
 const { IG_TOKEN, IG_USER_ID, R2_PUBLIC_URL } = process.env;
 
+if (!IG_TOKEN || !IG_USER_ID || !R2_PUBLIC_URL) {
+  throw new Error(
+    "Missing essential environment variables (IG_TOKEN, IG_USER_ID, or R2_PUBLIC_URL)",
+  );
+}
+
 const date = new Date().toISOString().slice(0, 10);
 
 const LOCAL_VIDEO_PATH = "./out/video.mp4";
