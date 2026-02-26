@@ -8,6 +8,7 @@ import { uploadFileToR2 } from "./s3-client.js";
 dotenv.config();
 
 const { IG_TOKEN, IG_USER_ID, R2_PUBLIC_URL } = process.env;
+const API_VERSION = "v25.0";
 
 if (!IG_TOKEN || !IG_USER_ID || !R2_PUBLIC_URL) {
   throw new Error(
@@ -46,7 +47,7 @@ async function waitForContainer(containerId) {
 
     try {
       const res = await axios.get(
-        `https://graph.facebook.com/v24.0/${containerId}`,
+        `https://graph.facebook.com/${API_VERSION}/${containerId}`,
         {
           params: {
             fields: "status_code,status",
@@ -116,19 +117,17 @@ async function publishReel() {
 
     logger.info("📦 Creating Reel container...");
 
-    const containerParams = new URLSearchParams();
-    containerParams.append("media_type", "REELS");
-    containerParams.append("video_url", videoUrl);
-    containerParams.append("cover_url", coverUrl);
-    containerParams.append("share_to_feed", "true");
-    containerParams.append("is_carousel_item", "false");
-    containerParams.append("access_token", IG_TOKEN);
-
     const containerRes = await axios.post(
-      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media`,
-      containerParams.toString(),
+      `https://graph.facebook.com/${API_VERSION}/${IG_USER_ID}/media`,
+      null,
       {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        params: {
+          media_type: "REELS",
+          video_url: videoUrl,
+          cover_url: coverUrl,
+          share_to_feed: "true",
+          access_token: IG_TOKEN,
+        },
       },
     );
 
@@ -138,16 +137,15 @@ async function publishReel() {
     await waitForContainer(containerId);
 
     logger.info("🚀 Publishing Reel...");
-    const publishParams = new URLSearchParams();
-    publishParams.append("creation_id", containerId);
-    publishParams.append("caption", CAPTION);
-    publishParams.append("access_token", IG_TOKEN);
-
     const publishRes = await axios.post(
-      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media_publish`,
-      publishParams.toString(),
+      `https://graph.facebook.com/${API_VERSION}/${IG_USER_ID}/media_publish`,
+      null,
       {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        params: {
+          creation_id: containerId,
+          caption: CAPTION,
+          access_token: IG_TOKEN,
+        },
       },
     );
 
@@ -156,7 +154,7 @@ async function publishReel() {
     const mediaId = publishRes.data.id;
 
     const permalinkRes = await axios.get(
-      `https://graph.facebook.com/v24.0/${mediaId}`,
+      `https://graph.facebook.com/${API_VERSION}/${mediaId}`,
       {
         params: {
           fields: "permalink",
@@ -173,8 +171,14 @@ async function publishReel() {
     );
     logger.info("Notification sent.");
   } catch (err) {
-    logger.error("Fatal error in publishReel", err);
-    await notifyTelegram(`❌ <b>Error</b>\n${err.message}`);
+    const errorData = err.response?.data;
+    logger.error("Fatal error in publishReel", {
+      message: err.message,
+      data: errorData || "No response data",
+    });
+    await notifyTelegram(
+      `❌ <b>Error</b>\n${err.message}${errorData ? `\n\n<pre>${JSON.stringify(errorData, null, 2)}</pre>` : ""}`,
+    );
     throw err;
   }
 }
