@@ -46,7 +46,7 @@ async function waitForContainer(containerId) {
 
     try {
       const res = await axios.get(
-        `https://graph.facebook.com/v25.0/${containerId}`,
+        `https://graph.facebook.com/v24.0/${containerId}`,
         {
           params: {
             fields: "status_code,status",
@@ -116,18 +116,19 @@ async function publishReel() {
 
     logger.info("📦 Creating Reel container...");
 
+    const containerParams = new URLSearchParams();
+    containerParams.append("media_type", "REELS");
+    containerParams.append("video_url", videoUrl);
+    containerParams.append("cover_url", coverUrl);
+    containerParams.append("share_to_feed", "true");
+    containerParams.append("is_carousel_item", "false");
+    containerParams.append("access_token", IG_TOKEN);
+
     const containerRes = await axios.post(
-      `https://graph.facebook.com/v25.0/${IG_USER_ID}/media`,
-      null,
+      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media`,
+      containerParams.toString(),
       {
-        params: {
-          media_type: "REELS",
-          video_url: videoUrl,
-          cover_url: coverUrl,
-          caption: CAPTION,
-          share_to_feed: true,
-          access_token: IG_TOKEN,
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       },
     );
 
@@ -137,14 +138,16 @@ async function publishReel() {
     await waitForContainer(containerId);
 
     logger.info("🚀 Publishing Reel...");
+    const publishParams = new URLSearchParams();
+    publishParams.append("creation_id", containerId);
+    publishParams.append("caption", CAPTION);
+    publishParams.append("access_token", IG_TOKEN);
+
     const publishRes = await axios.post(
-      `https://graph.facebook.com/v25.0/${IG_USER_ID}/media_publish`,
-      null,
+      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media_publish`,
+      publishParams.toString(),
       {
-        params: {
-          creation_id: containerId,
-          access_token: IG_TOKEN,
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
       },
     );
 
@@ -153,7 +156,7 @@ async function publishReel() {
     const mediaId = publishRes.data.id;
 
     const permalinkRes = await axios.get(
-      `https://graph.facebook.com/v25.0/${mediaId}`,
+      `https://graph.facebook.com/v24.0/${mediaId}`,
       {
         params: {
           fields: "permalink",
