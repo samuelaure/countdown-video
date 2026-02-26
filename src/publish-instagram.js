@@ -8,7 +8,7 @@ import { uploadFileToR2 } from "./s3-client.js";
 dotenv.config();
 
 const { IG_TOKEN, IG_USER_ID, R2_PUBLIC_URL } = process.env;
-const API_VERSION = "v25.0";
+const API_VERSION = "v21.0"; // Downgrading to more stable version while Meta fixes the v25 bug
 
 if (!IG_TOKEN || !IG_USER_ID || !R2_PUBLIC_URL) {
   throw new Error(
@@ -119,15 +119,11 @@ async function publishReel() {
 
     const containerRes = await axios.post(
       `https://graph.facebook.com/${API_VERSION}/${IG_USER_ID}/media`,
-      null,
       {
-        params: {
-          media_type: "REELS",
-          video_url: videoUrl,
-          cover_url: coverUrl,
-          share_to_feed: "true",
-          access_token: IG_TOKEN,
-        },
+        media_type: "REELS", // Order matters for some legacy parsers
+        video_url: videoUrl,
+        cover_url: coverUrl,
+        access_token: IG_TOKEN,
       },
     );
 
@@ -139,13 +135,10 @@ async function publishReel() {
     logger.info("🚀 Publishing Reel...");
     const publishRes = await axios.post(
       `https://graph.facebook.com/${API_VERSION}/${IG_USER_ID}/media_publish`,
-      null,
       {
-        params: {
-          creation_id: containerId,
-          caption: CAPTION,
-          access_token: IG_TOKEN,
-        },
+        creation_id: containerId,
+        caption: CAPTION,
+        access_token: IG_TOKEN,
       },
     );
 
