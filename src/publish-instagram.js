@@ -46,7 +46,7 @@ async function waitForContainer(containerId) {
 
     try {
       const res = await axios.get(
-        `https://graph.facebook.com/v24.0/${containerId}`,
+        `https://graph.facebook.com/v25.0/${containerId}`,
         {
           params: {
             fields: "status_code,status",
@@ -117,13 +117,17 @@ async function publishReel() {
     logger.info("📦 Creating Reel container...");
 
     const containerRes = await axios.post(
-      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media`,
+      `https://graph.facebook.com/v25.0/${IG_USER_ID}/media`,
+      null,
       {
-        media_type: "REELS",
-        video_url: videoUrl,
-        cover_url: coverUrl,
-        caption: CAPTION,
-        access_token: IG_TOKEN,
+        params: {
+          media_type: "REELS",
+          video_url: videoUrl,
+          cover_url: coverUrl,
+          caption: CAPTION,
+          share_to_feed: true,
+          access_token: IG_TOKEN,
+        },
       },
     );
 
@@ -134,10 +138,13 @@ async function publishReel() {
 
     logger.info("🚀 Publishing Reel...");
     const publishRes = await axios.post(
-      `https://graph.facebook.com/v24.0/${IG_USER_ID}/media_publish`,
+      `https://graph.facebook.com/v25.0/${IG_USER_ID}/media_publish`,
+      null,
       {
-        creation_id: containerId,
-        access_token: IG_TOKEN,
+        params: {
+          creation_id: containerId,
+          access_token: IG_TOKEN,
+        },
       },
     );
 
@@ -146,7 +153,7 @@ async function publishReel() {
     const mediaId = publishRes.data.id;
 
     const permalinkRes = await axios.get(
-      `https://graph.facebook.com/v24.0/${mediaId}`,
+      `https://graph.facebook.com/v25.0/${mediaId}`,
       {
         params: {
           fields: "permalink",
