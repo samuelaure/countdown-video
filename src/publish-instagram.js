@@ -92,9 +92,6 @@ async function publishReel() {
     }
 
     logger.info("⬆️ Uploading VIDEO to R2...");
-    await notifyTelegram(
-      "2️⃣⏳ @in999days Successful rendering... Start uploading video and cover to Instagram.",
-    );
 
     const timestamp = Date.now();
     const videoUrl = await uploadMedia(
@@ -160,7 +157,7 @@ async function publishReel() {
       permalink: permalinkRes.data.permalink,
     });
     await notifyTelegram(
-      `3️⃣✅ <b>Reel published</b>\n<a href="${permalinkRes.data.permalink}">View on Instagram</a>`,
+      `✅ <b>Reel published</b>\n<a href="${permalinkRes.data.permalink}">View on Instagram</a>`,
     );
     logger.info("Notification sent.");
   } catch (err) {
