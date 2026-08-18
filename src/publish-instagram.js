@@ -27,7 +27,10 @@ const CAPTION = `${Math.max(
 )}...`;
 
 async function uploadMedia(localPath, filename, contentType) {
-  const key = `ig_in999days/${filename}`; // Maintain folder structure
+  // Outputs live alongside the rest of the platform's media in nau-storage.
+  // The dedicated r2-asset-manager bucket was retired; these files are
+  // disposable once Instagram has fetched them, so they are not worth a bucket.
+  const key = `production/countdown-video/${filename}`;
   await uploadFileToR2(localPath, key, contentType);
   return `${R2_PUBLIC_URL}/${key}`;
 }
