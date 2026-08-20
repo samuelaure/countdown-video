@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import fs from "fs";
 import dotenv from "dotenv";
@@ -50,4 +50,22 @@ export const uploadFileToR2 = async (filePath, key, contentType) => {
 
   await upload.done();
   return key;
+};
+
+/**
+ * Removes objects from the bucket. Called once Instagram has published the
+ * reel: from that point the platform serves its own copies, so keeping ours
+ * only consumes quota. Failure is not fatal — a leftover file is cheaper than
+ * a failed run that already published.
+ */
+export const deleteFilesFromR2 = async (keys) => {
+  if (!keys.length) return;
+  const client = getClient();
+
+  await client.send(
+    new DeleteObjectsCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Delete: { Objects: keys.map((Key) => ({ Key })) },
+    }),
+  );
 };

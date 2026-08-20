@@ -3,7 +3,7 @@ import fs from "fs";
 import dotenv from "dotenv";
 import { notifyTelegram } from "./telegram.js";
 import logger from "./logger.js";
-import { uploadFileToR2 } from "./s3-client.js";
+import { uploadFileToR2, deleteFilesFromR2 } from "./s3-client.js";
 
 dotenv.config();
 
@@ -32,7 +32,7 @@ async function uploadMedia(localPath, filename, contentType) {
   // disposable once Instagram has fetched them, so they are not worth a bucket.
   const key = `production/countdown-video/${filename}`;
   await uploadFileToR2(localPath, key, contentType);
-  return `${R2_PUBLIC_URL}/${key}`;
+  return { url: `${R2_PUBLIC_URL}/${key}`, key };
 }
 
 async function waitForContainer(containerId) {
@@ -84,6 +84,9 @@ async function waitForContainer(containerId) {
 }
 
 async function publishReel() {
+  // Keys uploaded this run, removed once Instagram has the reel.
+  const uploadedKeys = [];
+
   try {
     logger.info("Starting publish process", { date });
 
@@ -97,19 +100,23 @@ async function publishReel() {
     logger.info("⬆️ Uploading VIDEO to R2...");
 
     const timestamp = Date.now();
-    const videoUrl = await uploadMedia(
+    const video = await uploadMedia(
       LOCAL_VIDEO_PATH,
       `video_${date}_${timestamp}.mp4`,
       "video/mp4",
     );
+    const videoUrl = video.url;
+    uploadedKeys.push(video.key);
     logger.info("🌐 Video URL uploaded", { videoUrl });
 
     logger.info("⬆️ Uploading COVER to R2...");
-    const coverUrl = await uploadMedia(
+    const cover = await uploadMedia(
       LOCAL_COVER_PATH,
       `cover_${date}_${timestamp}.png`,
       "image/png",
     );
+    const coverUrl = cover.url;
+    uploadedKeys.push(cover.key);
     logger.info("🌐 Cover URL uploaded", { coverUrl });
 
     logger.info("⏳ Waiting 30 seconds for file synchronization...");
@@ -163,6 +170,19 @@ async function publishReel() {
       `✅ <b>Reel published</b>\n<a href="${permalinkRes.data.permalink}">View on Instagram</a>`,
     );
     logger.info("Notification sent.");
+
+    // Instagram now serves its own copies of both files, so ours are dead
+    // weight against the storage quota. Deliberately after the notification:
+    // a cleanup failure must not turn a successful publish into a failed run.
+    try {
+      await deleteFilesFromR2(uploadedKeys);
+      logger.info("🧹 Released media from R2", { keys: uploadedKeys.length });
+    } catch (cleanupErr) {
+      logger.error("Cleanup failed — files left in R2", {
+        message: cleanupErr.message,
+        keys: uploadedKeys,
+      });
+    }
   } catch (err) {
     const errorData = err.response?.data;
     logger.error("Fatal error in publishReel", {
